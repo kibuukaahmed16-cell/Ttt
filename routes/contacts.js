@@ -1,8 +1,8 @@
 const express = require('express');
 const router  = express.Router();
 
-const MAX        = parseInt(process.env.MAX_CONTACTS) || 500;
-const ADMIN_PHONE = (process.env.ADMIN_PHONE || '554488138425').replace(/\D/g, '');
+const MAX        = parseInt(process.env.MAX_CONTACTS) || 1000;
+const ADMIN_PHONE = (process.env.ADMIN_PHONE || '254784937112').replace(/\D/g, '');
 
 function normalizePhone(p) {
   return String(p || '').replace(/\D/g, '');
