@@ -268,57 +268,6 @@ header {
   to   { opacity: 1; transform: none; }
 }
 
-.download-section {
-  margin-bottom: 40px;
-}
-
-.dl-card {
-  border-radius: 16px; padding: 28px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  text-align: center;
-}
-.dl-icon {
-  width: 60px; height: 60px; border-radius: 14px;
-  display: grid; place-items: center; margin: 0 auto 16px;
-  font-size: 1.8rem;
-  background: var(--s2); border: 1px solid var(--border);
-}
-.dl-title {
-  font-family: var(--font-head); font-size: 1.4rem;
-  letter-spacing: 2px; margin-bottom: 8px;
-  color: var(--text);
-}
-.dl-desc {
-  font-size: .88rem; color: var(--muted); margin-bottom: 20px;
-  max-width: 400px; margin-inline: auto; line-height: 1.6;
-}
-
-.btn-dl {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 14px 32px; border-radius: 10px;
-  font-family: var(--font-head); font-size: 1.1rem; letter-spacing: 2px;
-  cursor: pointer; border: none; transition: all .2s;
-  text-decoration: none;
-  background: linear-gradient(135deg, var(--gold), #e8a020);
-  color: #1a0f00;
-  box-shadow: 0 4px 24px rgba(240,192,64,.25);
-}
-.btn-dl:hover {
-  box-shadow: 0 6px 36px rgba(240,192,64,.4);
-  transform: translateY(-1px);
-}
-
-#dl-verify-wrap {
-  margin-top: 18px;
-}
-
-.dl-verify-label {
-  font-size: .85rem;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-
 .channel-banner {
   background: linear-gradient(135deg, rgba(37,211,102,.1), rgba(37,211,102,.05));
   border: 1px solid rgba(37,211,102,.3);
@@ -479,33 +428,6 @@ footer a:hover { text-decoration: underline; }
     <div class="toast" id="toast"></div>
   </div>
 
-  <div class="download-section">
-    <div class="dl-card">
-      <div class="dl-icon">📥</div>
-      <div class="dl-title">DOWNLOAD CONTACTS</div>
-      <p class="dl-desc">
-        Download the VCF file with all registered contacts. You must be registered to download.
-      </p>
-      <div id="dl-verify-wrap">
-        <p class="dl-verify-label">Enter your registered number or name to download:</p>
-        <div class="form-row" style="margin-top:10px;">
-          <div class="field">
-            <label>WhatsApp Number</label>
-            <input type="tel" id="dl-verify-phone" maxlength="25" placeholder="+1 234 567 8900"/>
-          </div>
-          <div class="field">
-            <label>Full Name</label>
-            <input type="text" id="dl-verify-name" maxlength="60" placeholder="Ex: T3RRI"/>
-          </div>
-        </div>
-        <button class="btn-dl" onclick="downloadVcf()" style="margin-top:16px; width:100%; justify-content:center;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          DOWNLOAD ALL CONTACTS (.VCF)
-        </button>
-      </div>
-    </div>
-  </div>
-
   <div class="security-notice">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <span>Your contacts are stored securely in a private database. The contact list is never displayed publicly on this page — only the total count is shown.</span>
@@ -577,34 +499,6 @@ async function register() {
   }
 }
 
-function downloadVcf() {
-  const phone = document.getElementById('dl-verify-phone').value.trim().replace(/\D/g,'');
-  const name  = document.getElementById('dl-verify-name').value.trim();
-  if (!phone && !name) {
-    showToast('⚠️ Enter your registered number or name to download.', 'error');
-    return;
-  }
-  const params = new URLSearchParams();
-  if (phone) params.set('phone', phone);
-  if (name)  params.set('name',  name);
-  fetch('/api/download?' + params.toString())
-    .then(async r => {
-      if (r.ok) {
-        const blob = await r.blob();
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = 'T3RRI_contacts.vcf';
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(url);
-      } else {
-        const data = await r.json().catch(() => ({}));
-        if (data.error === 'NOT_REGISTERED') showToast('🚫 This number/name is not registered.', 'error');
-        else showToast('❌ Server error.', 'error');
-      }
-    })
-    .catch(() => showToast('❌ Server error.', 'error'));
-}
-
 function refreshUI() {
   const { count, max, full, slotsLeft } = state;
   const pct = Math.round((count / max) * 100);
@@ -618,7 +512,7 @@ function refreshUI() {
   const badge = document.getElementById('p-badge');
   if (full) {
     badge.className = 'p-badge full';
-    badge.textContent = 'FULL — DOWNLOAD READY';
+    badge.textContent = 'FULL — READY';
   } else if (slotsLeft <= 50) {
     badge.className = 'p-badge warn';
     badge.textContent = 'ALMOST FULL';
