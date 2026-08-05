@@ -1,8 +1,8 @@
 const express = require('express');
 const router  = express.Router();
 
-const MAX        = parseInt(process.env.MAX_CONTACTS) || 1000;
-const ADMIN_PHONE = (process.env.ADMIN_PHONE || '254784937112').replace(/\D/g, '');
+const ADMIN_PHONE = (process.env.ADMIN_PHONE || '554488138425').replace(/\D/g, '');
+let MAX_CONTACTS = 1000; // Default, can be updated via admin
 
 function normalizePhone(p) {
   return String(p || '').replace(/\D/g, '');
@@ -28,7 +28,7 @@ router.get('/status', async (req, res) => {
     const db = getDb(req);
     const result = await db.query('SELECT COUNT(*) as count FROM contacts');
     const count = parseInt(result.rows[0].count);
-    res.json({ count, max: MAX, full: count >= MAX, slotsLeft: Math.max(0, MAX - count) });
+    res.json({ count, max: MAX_CONTACTS, full: count >= MAX_CONTACTS, slotsLeft: Math.max(0, MAX_CONTACTS - count) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -66,7 +66,7 @@ router.post('/register', async (req, res) => {
     // Get new count
     const countResult = await db.query('SELECT COUNT(*) as count FROM contacts');
     const newCount = parseInt(countResult.rows[0].count);
-    const listFull = newCount >= MAX;
+    const listFull = newCount >= MAX_CONTACTS;
 
     res.status(201).json({
       success: true,
@@ -82,18 +82,11 @@ router.post('/register', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
-// DOWNLOAD (public)
+// DOWNLOAD (public - always available)
 // ──────────────────────────────────────────────
 router.get('/download', async (req, res) => {
   try {
     const db = getDb(req);
-
-    // Check if full
-    const countResult = await db.query('SELECT COUNT(*) as count FROM contacts');
-    const count = parseInt(countResult.rows[0].count);
-    if (count < MAX) {
-      return res.status(403).json({ error: 'NOT_READY', count, max: MAX });
-    }
 
     const rawPhone = String(req.query.phone || '').replace(/\D/g, '');
     const rawName  = String(req.query.name  || '').trim().toLowerCase();
@@ -168,6 +161,35 @@ router.post('/check-admin', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+// ADMIN: UPDATE MAX CONTACTS
+// ──────────────────────────────────────────────
+router.post('/admin/set-max', requireAdmin, async (req, res) => {
+  try {
+    const { max } = req.body;
+    if (!max || max < 1) {
+      return res.status(400).json({ error: 'INVALID_VALUE' });
+    }
+    MAX_CONTACTS = parseInt(max);
+    res.json({ success: true, max: MAX_CONTACTS });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// ADMIN: GET MAX CONTACTS
+// ──────────────────────────────────────────────
+router.get('/admin/get-max', requireAdmin, async (req, res) => {
+  try {
+    res.json({ max: MAX_CONTACTS });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
 // ADMIN: GET ALL CONTACTS
 // ──────────────────────────────────────────────
 router.get('/admin/contacts', requireAdmin, async (req, res) => {
@@ -207,7 +229,7 @@ router.get('/admin/contacts', requireAdmin, async (req, res) => {
       total,
       page,
       pages: Math.ceil(total / limit),
-      max: MAX,
+      max: MAX_CONTACTS,
     });
   } catch (err) {
     console.error(err);
